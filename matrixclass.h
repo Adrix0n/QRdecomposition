@@ -6,12 +6,19 @@
 #include <chrono>
 #include <omp.h>
 
+
 template <class T>
 class Matrix{
     public:
+        /**
+         * wektor wektorów przechowujący elementy macierzy.
+         */
         std::vector<std::vector<T>> mat;
         int rows;
         int cols;
+        /**
+         * Dodane w celu łatwiejszego debugowania programu. Ustawienie na true sprawia, że wyświetlane są dodatkowe informacje w trakcie działania programu.
+         */
         bool debug = false;
 
     Matrix(int drows, int dcols, bool ddebug = false){
@@ -48,6 +55,9 @@ class Matrix{
     T get(int row, int col){return this->mat[row][col];}
     void set(int row, int col, T val){this->mat[row][col]=val;}
 
+    /**
+     * Pozwala kopiować macierze.
+     */
     Matrix copy(){
         Matrix res = Matrix(this->rows,this->cols);
         std::chrono::steady_clock::time_point begin;
@@ -66,20 +76,32 @@ class Matrix{
  
     }
 
-    
+    /**
+     * Zwraca wartość do podanej liczby miejsc po przecinku.
+     */
     T roundToDecimalPlace(T number, int decimalPlaces) {
         T multiplier = std::pow(10, decimalPlaces);
         return std::round(number * multiplier) / multiplier;
     }
+
+    /**
+     * Wypisuje macierz na wyjście.
+     */
     void print(){
         for(int i=0;i<this->rows;i++){
             std::cout<<"\n";
+            std::cout<<"[";
             for(int j=0;j<this->cols;j++){
-                std::cout<<roundToDecimalPlace(this->mat[i][j],2)<<" ";
+                std::cout<<roundToDecimalPlace(this->mat[i][j],2);
+                if(j<this->cols-1) std::cout<<", ";
             }
+            std::cout<<"]";
         }
     }
 
+    /**
+     * Transpozycja macierzy.
+     */
     Matrix transpose(){
         Matrix res = Matrix(this->cols,this->rows);
         std::chrono::steady_clock::time_point begin;
@@ -97,27 +119,21 @@ class Matrix{
         return res;
     }
 
+    /**
+     * Wypełnia macierz losowymi wartościami z zakresu -10 - 9.
+     */
     void fillRandom(){
-        srand(100);
+        srand(time(NULL));
         for(int i=0;i<this->rows;i++){
             for(int j=0;j<this->cols;j++){
                 this->mat[i][j] = (T)(rand()%20-10);
             }
         }
     }
-
-    // Matrix operator-(Matrix& other){
-    //     // zrównoleglić na każdą kolumnę
-    //     Matrix res = Matrix(this->rows,this->cols);
-    //     #pragma omp parallel for
-    //     for(int i=0;i<this->rows;i++){
-    //         for(int j=0;j<this->cols;j++){
-    //             res.set(i,j,this->mat[i][j]-other.get(i,j));
-    //         }
-    //     }
-    //     return res;
-    // }
-
+    
+    /**
+     * Mnożenie macierzy metodą Cauchy'ego.
+     */
     Matrix operator*(Matrix& other){    
         Matrix res = Matrix(this->rows,other.cols);
         std::chrono::steady_clock::time_point begin;
@@ -141,14 +157,17 @@ class Matrix{
         return res;
     }
 
-    // Matrix operator*(float other){
-    //     Matrix res = Matrix(this->rows,this->cols);
-    //     #pragma omp parallel for
-    //     for(int i=0;i<this->rows;i++){
-    //         for(int j=0;j<this->cols;j++){
-    //             res.set(1,j,this->mat[i][j] * T(other));
-    //         }
-    //     }
-    //     return res;
-    // }
+    /**
+     * Nie użyte w programie mnożenie macierzy przez skalar.
+     */
+    Matrix operator*(float other){
+        Matrix res = Matrix(this->rows,this->cols);
+        #pragma omp parallel for
+        for(int i=0;i<this->rows;i++){
+            for(int j=0;j<this->cols;j++){
+                res.set(1,j,this->mat[i][j] * T(other));
+            }
+        }
+        return res;
+    }
 };
