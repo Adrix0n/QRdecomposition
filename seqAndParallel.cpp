@@ -8,59 +8,14 @@
 #include <string>
 #include <omp.h>
 #include <chrono>
-#include "matrixpar.cpp"
-
-template<typename T>
-std::vector<std::vector<T>> readMatrixFromFile(const std::string& filename) {
-    std::vector<std::vector<T>> matrix;
-    std::ifstream file(filename);
-    
-    if (!file.is_open()) {
-        std::cerr << "Failed to open file: " << filename << std::endl;
-        return matrix;
-    }
-
-    std::string line;
-    if (std::getline(file, line)) {
-        std::stringstream ss(line);
-        char comma;
-        int rows, cols;
-        if (!(ss >> rows >> comma >> cols) || comma != ',') {
-            std::cerr << "Invalid format in the first line of the file." << std::endl;
-            return matrix;
-        }
-
-        //matrix.resize(rows);
-        while (std::getline(file, line)) {
-            std::stringstream ss2(line);
-            T num;
-            std::vector<T> row;
-            while (ss2 >> num) {
-                row.push_back(num);
-                if (ss2.peek() == ',')
-                    ss2.ignore();
-            }
-            if (row.size() != cols) {
-                std::cerr << "Invalid number of elements in a row." << std::endl;
-                return matrix;
-            }
-            matrix.push_back(row);
-        }
-        if (matrix.size() != rows) {
-            std::cerr << "Invalid number of rows.:"<<matrix.size()<<" "<<rows << std::endl;
-            return matrix;
-        }
-    } else {
-        std::cerr << "Empty file." << std::endl;
-        return matrix;
-    }
-
-    file.close();
-    return matrix;
-}
+#include "matrixclass.h"
 
 
-
+/*!
+* Tworzy macierz jednostkową o podanym rozmiarze n
+*
+* @param n Określa rozmiar tworzonej macierzy (n x n)
+*/
 template <class T>
 Matrix<T> createIdentityMatrix(int n){
     Matrix<T> res = Matrix<T>(n,n);
@@ -70,6 +25,15 @@ Matrix<T> createIdentityMatrix(int n){
     return res;
 }
 
+/*!
+* Tworzy macierz obrotu Givensa
+*
+* @param n Określa rozmiar tworzonej macierzy (n x n)
+* @param i Wartość row-1
+* @param j Wartość row
+* @param x1 Wartość mat[row-1][col]
+* @param x2 Wartość mat[row][col]
+*/
 template <class T>
 Matrix<T> givensRotationMatrix(int n, int i, int j, T x1, T x2){
     Matrix<T> res = createIdentityMatrix<T>(n);
@@ -82,6 +46,17 @@ Matrix<T> givensRotationMatrix(int n, int i, int j, T x1, T x2){
     return res;
 }
 
+/*!
+* Główna funckja programu. To tutaj wykonuje się algorytm rozkładu QR macierzy.
+* Na początku tworzone są dwie macierze: matR = mat i matQ = I. Następnie algorytm wywołuje się
+* sekwencyjnie, gdzie w każdej iteracji wykorzystuje macierz obrotu Givensa w celu wyzerowania
+* kolejnego elementu pod główną przekątną macierzy matR. Po wyzerowaniu wszystkich koniecznych
+* elementów otrzymywana jest ostateczna postać macierzy R. Następnie wyliczana jest macierz Q na
+* podstawie wyliczonych wcześniej macierzy obrotu. 
+*
+* @param mat Macierz, na której wykonywany będzie rozkład QR.
+* 
+*/
 template <class T>
 std::vector<Matrix<T>> QRDecomposeWithGivens(Matrix<T> mat){
     Matrix<T> matR = mat.copy();
@@ -129,8 +104,8 @@ int main(){
     // QRMatrix.print();
 
     int nVal[20];
-    int nInc = 3;
-    int nStart = 9;
+    int nInc = 2;
+    int nStart = 10;
     for(int i = 0; i < 20; i ++){
         nVal[i] = nStart + nInc*i;
     }
@@ -145,7 +120,7 @@ int main(){
     for (size_t i = 0; i < 20; ++i) {
         file << nVal[i];
         if (i != 20 - 1)
-            file << ";"; 
+            file << ","; 
     }
     file << std::endl;
 
@@ -160,13 +135,18 @@ int main(){
         int elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
         file << elapsed;
         if (i != 20 - 1)
-            file << ";";
+            file << ",";
 
-        // std::cout<<"Macierz ML\n";
+        // std::cout<<"\nMacierz A\n";
         // testMatrix.print();
-        // std::cout<<"Macierz QR:\n";
+        // std::cout<<"\nMacierz Q:\n";
+        // res[0].print();
+        // std::cout<<"\nMacierz R:\n";
+        // res[1].print();
+        // std::cout<<"\nMacierz Q*R:\n";
         // Matrix<double> QRMatrix = res[0] * res[1];
         // QRMatrix.print();
+
         std::cout << "Time difference = " << elapsed << "[ms]" << std::endl;
                 
     }
