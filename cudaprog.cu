@@ -10,8 +10,7 @@
 #include <omp.h>
 #include <chrono>
 
-
-const int SIZE = 70;
+#define SIZE 70
 
 template <typename T>
 __global__ void MatrixMulKernel(T* matA, T* matB, T* matOut, int size){
@@ -20,12 +19,12 @@ __global__ void MatrixMulKernel(T* matA, T* matB, T* matOut, int size){
 
     if(row<size&&col<size){
         T sumC= T(0);
+        int rowsize = row*SIZE;
         for (int k = 0; k < size; ++k)
-            sumC += matA[row*SIZE+k] * matB[k*SIZE+Col];
+            sumC += matA[rowsize+k] * matB[k*SIZE+col];
         matOut[row*SIZE + col] = sumC;
     }
 }
-
 
 template <typename T>
 void fillRandom(T mat[][SIZE], int size){
@@ -201,8 +200,8 @@ int main(){
 
     
     int nVal[20];
-    int nInc = 3;
-    int nStart = 9;
+    int nInc = 2;
+    int nStart = 10;
     for(int i = 0; i < 20; i ++){
         nVal[i] = nStart + nInc*i;
     }
@@ -228,7 +227,6 @@ int main(){
         double testR[SIZE][SIZE];
         fillRandom(testMatrix,SIZE);
     
-        //printf("Checkpoint1\n");
         begin = std::chrono::steady_clock::now();
         QRDecomposeWithGivens(testMatrix,testQ,testR,nVal[i],blocksPerGrid,threadsPerBlock);
         end = std::chrono::steady_clock::now();
